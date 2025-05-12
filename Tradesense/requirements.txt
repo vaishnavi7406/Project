@@ -10,3 +10,4 @@ plotly
 beautifulsoup4
 requests
 lxml
+statsmodels
