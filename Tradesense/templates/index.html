@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradeRiser - Advanced Trading Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(45deg, #1a1a2e, #16213e, #2a1a3e, #1a2e2a);
+            background-size: 400%;
+            animation: gradientShift 15s ease infinite;
+            font-family: 'Poppins', sans-serif;
+            color: #e0e0e0;
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .ticker-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+
+        .ticker {
+            position: absolute;
+            top: 20px;
+            white-space: nowrap;
+            font-size: 16px;
+            color: #00ffcc;
+            opacity: 0.3;
+            animation: tickerMove 30s linear infinite;
+        }
+
+        @keyframes tickerMove {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(-20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            0% { transform: translateX(-50px); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 255, 204, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(0, 255, 204, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 255, 204, 0); }
+        }
+
+        .welcome-text {
+            color: #e0e0e0;
+            font-size: 18px;
+            margin: 20px auto;
+            max-width: 600px;
+            text-align: center;
+            animation: slideIn 1s ease-in-out;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            text-align: center;
+            animation: fadeIn 1s ease-in-out;
+            max-width: 400px;
+            margin: 20px auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .main-app {
+            display: none;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: #00ffcc;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1001;
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        .sidebar-toggle:hover {
+            background: #00ccaa;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        .sidebar h3 {
+            color: #00ffcc;
+            margin-bottom: 15px;
+            font-size: 18px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar p {
+            margin: 8px 0;
+            color: #e0e0e0;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar select, .sidebar button {
+            width: 100%;
+            margin: 8px 0;
+            padding: 8px;
+            border-radius: 5px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .sidebar select:hover, .sidebar button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.02);
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px;
+            margin-left: 250px;
+            transition: margin-left 0.3s ease;
+        }
+
+        .content.full-width {
+            margin-left: 0;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .glass h2, .glass h3 {
+            color: #ffffff;
+            margin-bottom: 8px;
+            font-size: 18px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .glass p {
+            color: #e0e0e0;
+            margin: 5px 0;
+            overflow-wrap: break-word;
+            font-size: 14px;
+        }
+
+        .glass button {
+            padding: 8px 16px;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .glass button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .glass button.buy {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .glass button.sell {
+            background: #ff0000;
+            color: #fff;
+        }
+
+        .glass button.max {
+            background: #ff00ff;
+            color: #fff;
+        }
+
+        #chart {
+            width: 100%;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .trade-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .trade-controls .start-stop {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .trade-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .login-input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            padding: 10px;
+            color: #fff;
+            width: 100%;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .login-button {
+            background: #00ffcc;
+            color: #1a1a2e;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+            width: 120px;
+            animation: pulse 2s infinite;
+        }
+
+        .login-button:hover {
+            background: #00ccaa;
+            box-shadow: 0 0 15px #00ffcc;
+            transform: scale(1.1);
+        }
+
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(0, 255, 204, 0.1));
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            text-align: center;
+            animation: popupFadeIn 0.5s ease-in-out;
+            backdrop-filter: blur(10px);
+            z-index: 1001;
+            width: 90%;
+            max-width: 400px;
+            display: none;
+        }
+
+        @keyframes popupFadeIn {
+            0% { opacity: 0; transform: translate(-50%, -60%) scale(0.9); }
+            100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .popup-text {
+            color: #e0e0e0;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+                transform: translateX(-100%);
+            }
+
+            .sidebar.collapsed {
+                transform: translateX(-100%);
+            }
+
+            .sidebar-toggle {
+                display: block;
+            }
+
+            .content {
+                margin-left: 0;
+            }
+
+            .content.full-width {
+                margin-left: 0;
+            }
+
+            .glass h2, .glass h3 {
+                font-size: 16px;
+            }
+
+            .glass p {
+                font-size: 12px;
+            }
+
+            .glass button {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .trade-controls .start-stop {
+                justify-content: center;
+            }
+
+            .trade-buttons {
+                justify-content: center;
+            }
+
+            #chart {
+                height: 300px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sidebar {
+                width: 180px;
+            }
+
+            .welcome-text {
+                font-size: 14px;
+            }
+
+            .login-container {
+                max-width: 95%;
+                padding: 15px;
+            }
+
+            .popup {
+                max-width: 280px;
+                padding: 15px;
+            }
+
+            .glass {
+                padding: 10px;
+            }
+
+            .glass h2, .glass h3 {
+                font-size: 14px;
+            }
+
+            .glass p {
+                font-size: 10px;
+            }
+
+            .glass button {
+                padding: 5px 10px;
+                font-size: 10px;
+            }
+
+            .trade-buttons {
+                gap: 5px;
+            }
+
+            #chart {
+                height: 250px;
+            }
+
+            .login-input {
+                padding: 8px;
+                font-size: 12px;
+            }
+
+            .login-button {
+                padding: 8px 16px;
+                font-size: 12px;
+                width: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="ticker-bg">
+        <div class="ticker">
+            AAPL +2.3% • TSLA -1.5% • GOOGL +0.8% • MSFT -0.2% • AMZN +1.7% • NVDA -0.9% • META +1.2% • 
+            AAPL +2.3% • TSLA -1.5% • GOOGL +0.8% • MSFT -0.2% • AMZN +1.7% • NVDA -0.9% • META +1.2%
+        </div>
+    </div>
+
+    <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+
+    <div id="user-popup" class="popup">
+        <p id="user-popup-text" class="popup-text"></p>
+    </div>
+
+    <div id="login-page">
+        <div class="welcome-text">
+            Welcome to TradeRiser, the ultimate platform for wealth creation! Trade stocks in real-time, 
+            track your portfolio, and gain market insights to make smarter investment decisions.
+        </div>
+
+        <div class="login-container">
+            <input type="text" id="login-username" class="login-input" placeholder="Username 👤">
+            <input type="password" id="login-password" class="login-input" placeholder="Password 🔒">
+            <div style="display: flex; justify-content: space-between;">
+                <button class="login-button" onclick="login()">Login 🔐</button>
+                <button class="login-button" onclick="showRegister()">Register 📝</button>
+            </div>
+            <p id="login-error" style="color: #ff5555; display: none;"></p>
+        </div>
+    </div>
+
+    <div id="register-page" class="login-container" style="display: none;">
+        <input type="text" id="register-username" class="login-input" placeholder="New Username 👤">
+        <input type="password" id="register-password" class="login-input" placeholder="New Password 🔒">
+        <input type="password" id="register-confirm-password" class="login-input" placeholder="Confirm Password 🔑">
+        <button class="login-button" onclick="register()">Register 📋</button>
+        <button class="login-button" onclick="showLogin()">Back to Login 🔙</button>
+        <p id="register-error" style="color: #ff5555; display: none;"></p>
+        <p id="register-success" style="color: #00ff00; display: none;"></p>
+    </div>
+
+    <div id="main-app" class="main-app" style="display: none;">
+        <div class="sidebar">
+            <h3 id="welcome-text">Welcome, <span id="username-display"></span> 👋</h3>
+            <p>Cash Balance 💵: $<span id="cash-balance">10000.00</span></p>
+            <p>Portfolio Value 📈: $<span id="portfolio-value">0.00</span></p>
+            <select id="menu" onchange="switchSection()">
+                <option value="dashboard">Dashboard 📊</option>
+                <option value="portfolio">Portfolio 💼</option>
+                <option value="watchlist">Watchlist 👀</option>
+                <option value="history">Transaction History 📜</option>
+            </select>
+            <button class="login-button" onclick="logout()">Logout 🚪</button>
+        </div>
+        <div class="content">
+            <div id="dashboard" class="glass">
+                <h2>Trading Dashboard: <span id="symbol-display">AAPL</span> (<span id="company-name">Apple Inc.</span>) 📈</h2>
+                <input type="text" id="symbol-input" class="login-input" placeholder="Enter Ticker (e.g., AAPL, TSLA) 🎫" value="AAPL">
+                <div class="trade-controls">
+                    <div class="start-stop">
+                        <button class="login-button" onclick="startTrading()">Start Trading 🚀</button>
+                        <button class="login-button" onclick="stopTrading()">Stop Trading 🛑</button>
+                    </div>
+                </div>
+                <div class="glass">
+                    <h3>Current Price 📈</h3>
+                    <p style="color: #00ff00;" id="current-price">$100.00</p>
+                </div>
+                <div class="glass">
+                    <h3>Trade Summary 💰</h3>
+                    <p>Bought Price 🛒: $<span id="bought-price">0.00</span></p>
+                    <p>Current Price 📊: $<span id="current-price-summary">100.00</span></p>
+                    <p>Sold Price 🏷️: $<span id="sold-price">0.00</span></p>
+                    <p id="profit-loss">Profit/Loss 📈: $0.00</p>
+                </div>
+                <div class="glass">
+                    <h3>Available Stocks 📜</h3>
+                    <p id="available-stocks">AAPL: 0 shares</p>
+                </div>
+                <div class="glass">
+                    <h3>Trade 🛠️</h3>
+                    <input type="number" id="trade-qty" class="login-input" min="1" value="1" placeholder="Quantity 🔢">
+                    <div class="trade-buttons">
+                        <button class="buy" onclick="buy()">Buy 🟢</button>
+                        <button class="max" onclick="setMaxQty()">Max 🔢</button>
+                        <button class="sell" onclick="sell()">Sell 🔴</button>
+                    </div>
+                    <p id="trade-message" style="color: #00ff00; display: none;"></p>
+                </div>
+                <div id="chart"></div>
+                <p id="status" style="text-align: center;"></p>
+            </div>
+            <div id="portfolio" class="glass" style="display: none;">
+                <h2>Portfolio 💼</h2>
+                <div class="glass">
+                    <h3>Account Summary 📋</h3>
+                    <p>Cash Balance 💵: $<span id="portfolio-cash">10000.00</span></p>
+                    <p>Portfolio Value 📈: $<span id="portfolio-value-summary">0.00</span></p>
+                </div>
+            </div>
+            <div id="watchlist" class="glass" style="display: none;">
+                <h2>Watchlist 👀</h2>
+                <input type="text" id="watchlist-input" class="login-input" placeholder="Add Symbol (e.g., AAPL) ➕">
+                <button class="login-button" onclick="addToWatchlist()">Add ➕</button>
+                <div class="glass">
+                    <h3>Your Watchlist 📋</h3>
+                    <div id="watchlist-content">
+                        <p style="text-align: center;">Your watchlist is empty. 📭</p>
+                    </div>
+                </div>
+            </div>
+            <div id="history" class="glass" style="display: none;">
+                <h2>Transaction History 📜</h2>
+                <div class="glass">
+                    <h3>Your Transactions 📋</h3>
+                    <div id="transactions-content">
+                        <p style="text-align: center;">No transactions yet. 📭</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <script>
+        let users = JSON.parse(localStorage.getItem('users')) || {};
+        let loggedIn = false;
+        let username = '';
+        let tradingActive = false;
+        let symbol = 'AAPL';
+        let lastPrice = { 'AAPL': 100 };
+        let soldPrice = {};
+        let candleData = [];
+        let intervalId = null;
+        let chart = null;
+        let series = null;
+
+        const tickerToCompany = {
+            'AAPL': 'Apple Inc.',
+            'AMZN': 'Amazon.com Inc.',
+            'TSLA': 'Tesla Inc.',
+            'GOOGL': 'Alphabet Inc.',
+            'MSFT': 'Microsoft Corporation',
+            'NVDA': 'NVIDIA Corporation',
+            'META': 'Meta Platforms Inc.'
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('main-app').style.display = 'none';
+            document.getElementById('login-page').style.display = 'block';
+            document.getElementById('register-page').style.display = 'none';
+            document.querySelector('.sidebar-toggle').style.display = 'none';
+        });
+
+        function showPopup(message) {
+            document.getElementById('user-popup-text').innerText = message;
+            document.getElementById('user-popup').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('user-popup').style.display = 'none';
+            }, 4000);
+        }
+
+        function login() {
+            const loginUsername = document.getElementById('login-username').value.trim();
+            const loginPassword = document.getElementById('login-password').value;
+            if (users[loginUsername] && users[loginUsername].password === loginPassword) {
+                loggedIn = true;
+                username = loginUsername;
+                document.getElementById('login-page').style.display = 'none';
+                document.getElementById('register-page').style.display = 'none';
+                document.getElementById('main-app').style.display = 'flex';
+                document.querySelector('.sidebar-toggle').style.display = 'block';
+                document.getElementById('username-display').innerText = username;
+                showPopup('Welcome Back! Start Trading 🚀📈');
+                updateSidebar();
+            } else {
+                document.getElementById('login-error').innerText = 'Invalid credentials 🚫';
+                document.getElementById('login-error').style.display = 'block';
+            }
+        }
+
+        function showRegister() {
+            document.getElementById('login-page').style.display = 'none';
+            document.getElementById('register-page').style.display = 'block';
+        }
+
+        function register() {
+            const regUsername = document.getElementById('register-username').value.trim();
+            const regPassword = document.getElementById('register-password').value;
+            const regConfirmPassword = document.getElementById('register-confirm-password').value;
+            if (users[regUsername]) {
+                document.getElementById('register-error').innerText = 'Username already exists! 🚫';
+                document.getElementById('register-error').style.display = 'block';
+            } else if (regPassword !== regConfirmPassword) {
+                document.getElementById('register-error').innerText = 'Passwords do not match! ⚠️';
+                document.getElementById('register-error').style.display = 'block';
+            } else {
+                users[regUsername] = {
+                    password: regPassword,
+                    balance: 10000.0,
+                    portfolio: {},
+                    watchlist: [],
+                    transactions: []
+                };
+                localStorage.setItem('users', JSON.stringify(users));
+                loggedIn = true;
+                username = regUsername;
+                document.getElementById('register-page').style.display = 'none';
+                document.getElementById('login-page').style.display = 'none';
+                document.getElementById('main-app').style.display = 'flex';
+                document.querySelector('.sidebar-toggle').style.display = 'block';
+                document.getElementById('username-display').innerText = username;
+                document.getElementById('register-success').innerText = `Registered successfully! Welcome, ${username}. You received a $10,000 bonus. 💰`;
+                document.getElementById('register-success').style.display = 'block';
+                showPopup('🎉 Congrats! $10,000 has been added to your account! 💰🚀');
+                updateSidebar();
+            }
+        }
+
+        function showLogin() {
+            document.getElementById('register-page').style.display = 'none';
+            document.getElementById('login-page').style.display = 'block';
+        }
+
+        function logout() {
+            loggedIn = false;
+            username = '';
+            tradingActive = false;
+            candleData = [];
+            if (intervalId) clearInterval(intervalId);
+            if (chart) {
+                chart.remove();
+                chart = null;
+                series = null;
+            }
+            document.getElementById('main-app').style.display = 'none';
+            document.getElementById('login-page').style.display = 'block';
+            document.getElementById('register-page').style.display = 'none';
+            document.querySelector('.sidebar-toggle').style.display = 'none';
+            showPopup('Logged out successfully! 👋');
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const content = document.querySelector('.content');
+            sidebar.classList.toggle('collapsed');
+            content.classList.toggle('full-width');
+        }
+
+        function initChart() {
+            const chartContainer = document.getElementById('chart');
+            if (!chartContainer) {
+                console.error('Chart container not found!');
+                return;
+            }
+
+            if (chart) {
+                chart.remove();
+                chart = null;
+                series = null;
+            }
+
+            chart = LightweightCharts.createChart(chartContainer, {
+                width: chartContainer.clientWidth,
+                height: chartContainer.clientHeight,
+                layout: {
+                    background: { type: 'solid', color: 'rgba(255, 255, 255, 0.1)' },
+                    textColor: '#e0e0e0',
+                },
+                grid: {
+                    vertLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                    horzLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                },
+                crosshair: {
+                    mode: LightweightCharts.CrosshairMode.Normal,
+                },
+                rightPriceScale: {
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                },
+                timeScale: {
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    timeVisible: true,
+                    secondsVisible: true,
+                },
+            });
+
+            series = chart.addCandlestickSeries({
+                upColor: '#00ff00',
+                downColor: '#ff0000',
+                borderUpColor: '#00ff00',
+                borderDownColor: '#ff0000',
+                wickUpColor: '#00ff00',
+                wickDownColor: '#ff0000',
+            });
+
+            if (candleData.length === 0) {
+                const now = Math.floor(Date.now() / 1000);
+                candleData = Array(60).fill().map((_, i) => ({
+                    time: now - (60 - i) * 60,
+                    open: 100 + Math.random() * 2 - 1,
+                    high: 101 + Math.random() * 2,
+                    low: 99 - Math.random() * 2,
+                    close: 100 + Math.random() * 2 - 1
+                }));
+                lastPrice[symbol] = candleData[candleData.length - 1].close;
+            }
+
+            series.setData(candleData);
+
+            window.addEventListener('resize', () => {
+                chart.resize(chartContainer.clientWidth, chartContainer.clientHeight);
+            });
+        }
+
+        function updateCandleData() {
+            if (!tradingActive || !series) return;
+
+            const volatility = 1.0;
+            const lastClose = lastPrice[symbol] || 100;
+            const newOpen = lastClose;
+            const newHigh = newOpen + Math.random() * volatility;
+            const newLow = newOpen - Math.random() * volatility;
+            const newClose = newOpen + (Math.random() - 0.5) * volatility;
+            const newCandle = {
+                time: Math.floor(Date.now() / 1000),
+                open: newOpen,
+                high: newHigh,
+                low: newLow,
+                close: newClose
+            };
+            candleData.push(newCandle);
+            if (candleData.length > 60) candleData.shift();
+            lastPrice[symbol] = newClose;
+            series.setData(candleData);
+            document.getElementById('current-price').innerText = `$${newClose.toFixed(2)}`;
+            document.getElementById('current-price-summary').innerText = newClose.toFixed(2);
+            document.getElementById('status').innerText = `Price updated to $${newClose.toFixed(2)} at ${new Date().toLocaleTimeString()} ⏰`;
+        }
+
+        function startTrading() {
+            symbol = document.getElementById('symbol-input').value.toUpperCase();
+            document.getElementById('symbol-display').innerText = symbol;
+            document.getElementById('company-name').innerText = tickerToCompany[symbol] || 'Unknown Company';
+            document.getElementById('available-stocks').innerText = `${symbol}: ${users[username].portfolio[symbol]?.quantity || 0} shares`;
+            tradingActive = true;
+            initChart();
+            intervalId = setInterval(updateCandleData, 1000);
+            showPopup(`Started trading ${symbol} 📈`);
+        }
+
+        function stopTrading() {
+            tradingActive = false;
+            if (intervalId) clearInterval(intervalId);
+            showPopup(`Stopped trading ${symbol} 🛑`);
+        }
+
+        function setMaxQty() {
+            const price = lastPrice[symbol];
+            const maxQty = Math.floor(users[username].balance / price);
+            document.getElementById('trade-qty').value = maxQty;
+            showPopup(`Set to max quantity: ${maxQty} shares 🟢`);
+        }
+
+        function buy() {
+            const qty = parseInt(document.getElementById('trade-qty').value);
+            const price = lastPrice[symbol];
+            const totalCost = price * qty;
+            if (totalCost <= users[username].balance) {
+                users[username].balance -= totalCost;
+                if (!users[username].portfolio[symbol]) {
+                    users[username].portfolio[symbol] = { quantity: 0, avg_price: 0 };
+                }
+                const currentQty = users[username].portfolio[symbol].quantity;
+                const currentAvgPrice = users[username].portfolio[symbol].avg_price;
+                users[username].portfolio[symbol].quantity += qty;
+                users[username].portfolio[symbol].avg_price = ((currentAvgPrice * currentQty) + (price * qty)) / (currentQty + qty);
+                users[username].transactions.push({
+                    time: new Date().toISOString(),
+                    symbol: symbol,
+                    action: 'Buy',
+                    quantity: qty,
+                    price: price,
+                    total: totalCost
+                });
+                localStorage.setItem('users', JSON.stringify(users));
+                document.getElementById('bought-price').innerText = users[username].portfolio[symbol].avg_price.toFixed(2);
+                updateProfitLoss();
+                updateSidebar();
+                document.getElementById('available-stocks').innerText = `${symbol}: ${users[username].portfolio[symbol].quantity} shares`;
+                document.getElementById('trade-message').innerText = `Bought ${qty} of ${symbol} at $${price.toFixed(2)} 🎉`;
+                document.getElementById('trade-message').style.display = 'block';
+                setTimeout(() => document.getElementById('trade-message').style.display = 'none', 3000);
+            } else {
+                showPopup('Insufficient balance! 🚫');
+            }
+        }
+
+        function sell() {
+            const qty = parseInt(document.getElementById('trade-qty').value);
+            const price = lastPrice[symbol];
+            if (users[username].portfolio[symbol] && users[username].portfolio[symbol].quantity >= qty) {
+                users[username].portfolio[symbol].quantity -= qty;
+                users[username].balance += price * qty;
+                if (users[username].portfolio[symbol].quantity === 0) {
+                    delete users[username].portfolio[symbol];
+                }
+                users[username].transactions.push({
+                    time: new Date().toISOString(),
+                    symbol: symbol,
+                    action: 'Sell',
+                    quantity: qty,
+                    price: price,
+                    total: price * qty
+                });
+                soldPrice[symbol] = price;
+                localStorage.setItem('users', JSON.stringify(users));
+                document.getElementById('sold-price').innerText = price.toFixed(2);
+                updateProfitLoss();
+                updateSidebar();
+                document.getElementById('available-stocks').innerText = `${symbol}: ${users[username].portfolio[symbol]?.quantity || 0} shares`;
+                document.getElementById('trade-message').innerText = `Sold ${qty} of ${symbol} at $${price.toFixed(2)} 💸`;
+                document.getElementById('trade-message').style.display = 'block';
+                setTimeout(() => document.getElementById('trade-message').style.display = 'none', 3000);
+            } else {
+                showPopup(`Not enough shares to sell! You have ${users[username].portfolio[symbol]?.quantity || 0} shares of ${symbol}. 🚫`);
+            }
+        }
+
+        function updateProfitLoss() {
+            const boughtPrice = parseFloat(document.getElementById('bought-price').innerText) || 0;
+            const soldPriceVal = parseFloat(document.getElementById('sold-price').innerText) || 0;
+            const profitLoss = soldPriceVal - boughtPrice;
+            const profitColor = profitLoss >= 0 ? '#00ff00' : '#ff0000';
+            const profitEmoji = profitLoss >= 0 ? '📈' : '📉';
+            document.getElementById('profit-loss').innerHTML = `Profit/Loss ${profitEmoji}: $<span style="color: ${profitColor}">${profitLoss.toFixed(2)}</span>`;
+        }
+
+        function updateSidebar() {
+            const userData = users[username];
+            let portfolioValue = 0;
+            for (const [sym, details] of Object.entries(userData.portfolio)) {
+                const currentPrice = lastPrice[sym] || 100;
+                portfolioValue += currentPrice * details.quantity;
+            }
+            document.getElementById('cash-balance').innerText = userData.balance.toFixed(2);
+            document.getElementById('portfolio-value').innerText = portfolioValue.toFixed(2);
+            document.getElementById('portfolio-cash').innerText = userData.balance.toFixed(2);
+            document.getElementById('portfolio-value-summary').innerText = portfolioValue.toFixed(2);
+        }
+
+        function switchSection() {
+            const menu = document.getElementById('menu').value;
+            document.getElementById('dashboard').style.display = menu === 'dashboard' ? 'block' : 'none';
+            document.getElementById('portfolio').style.display = menu === 'portfolio' ? 'block' : 'none';
+            document.getElementById('watchlist').style.display = menu === 'watchlist' ? 'block' : 'none';
+            document.getElementById('history').style.display = menu === 'history' ? 'block' : 'none';
+            if (menu === 'watchlist') updateWatchlist();
+            if (menu === 'history') updateTransactions();
+            if (menu === 'dashboard' && tradingActive) initChart();
+        }
+
+        function addToWatchlist() {
+            const newSymbol = document.getElementById('watchlist-input').value.toUpperCase();
+            if (newSymbol && !users[username].watchlist.includes(newSymbol)) {
+                users[username].watchlist.push(newSymbol);
+                localStorage.setItem('users', JSON.stringify(users));
+                showPopup(`${newSymbol} added to watchlist! ✅`);
+                updateWatchlist();
+            }
+        }
+
+        function updateWatchlist() {
+            const content = document.getElementById('watchlist-content');
+            content.innerHTML = '';
+            if (users[username].watchlist.length === 0) {
+                content.innerHTML = '<p style="text-align: center;">Your watchlist is empty. 📭</p>';
+            } else {
+                users[username].watchlist.forEach(symbol => {
+                    const div = document.createElement('div');
+                    div.innerHTML = `<p>${symbol}</p>`;
+                    content.appendChild(div);
+                });
+            }
+        }
+
+        function updateTransactions() {
+            const content = document.getElementById('transactions-content');
+            content.innerHTML = '';
+            if (users[username].transactions.length === 0) {
+                content.innerHTML = '<p style="text-align: center;">No transactions yet. 📭</p>';
+            } else {
+                users[username].transactions.forEach(t => {
+                    const div = document.createElement('div');
+                    div.innerHTML = `<p>${t.time} | ${t.symbol} | ${t.action} | ${t.quantity} shares | $${t.price.toFixed(2)}</p>`;
+                    content.appendChild(div);
+                });
+            }
+        }
+    </script>
+</body>
+</html>

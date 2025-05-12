@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Prediction Result</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        /* Glassmorphism effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Floating animation */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Blinking animation */
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .blink-slow {
+            animation: blink 2s infinite;
+        }
+
+        /* Box styling */
+        .info-boxes {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .info-box {
+            flex: 1 1 calc(33.33% - 20px);
+            padding: 20px;
+            text-align: center;
+            min-width: 200px;
+        }
+        .info-box h3 {
+            color: #00aaff;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+        .info-box p {
+            font-size: 1.2rem;
+            color: #ddd;
+        }
+
+        /* Sentiment Pie Chart */
+        #sentiment-pie-chart {
+            margin: 20px 0;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .info-box {
+                flex: 1 1 100%;
+            }
+            .info-boxes {
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="container glass">
+            <h1>{{ company_name }} ({{ ticker }}) - Prediction Results 📊</h1>
+
+            <!-- Info Boxes -->
+            <div class="info-boxes">
+                <div class="info-box glass">
+                    <h3>💵 Current Price</h3>
+                    <p>${{ "%.2f"|format(current_price) }}</p>
+                </div>
+                <div class="info-box glass">
+                    <h3>🏭 Industry</h3>
+                    <p>{{ industry }}</p>
+                </div>
+                <div class="info-box glass">
+                    <h3>📈 Volume</h3>
+                    <p>{{ volume }}</p>
+                </div>
+            </div>
+
+            <h2>📅 Recent Stock Data</h2>
+            <div class="table-container glass">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Open</th>
+                            <th>High</th>
+                            <th>Low</th>
+                            <th>Close</th>
+                            <th>Volume</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for index, row in data.iterrows() %}
+                        <tr>
+                            <td>{{ index.date() }}</td>
+                            <td>${{ "%.2f"|format(row['Open']) }}</td>
+                            <td>${{ "%.2f"|format(row['High']) }}</td>
+                            <td>${{ "%.2f"|format(row['Low']) }}</td>
+                            <td>${{ "%.2f"|format(row['Close']) }}</td>
+                            <td>{{ row['Volume'] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>📈 Historical Stock Price Chart</h2>
+            <div class="chart glass">{{ history_plot | safe }}</div>
+
+            <h2>🔮 Predicted Stock Prices</h2>
+            <div class="table-container glass">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Predicted Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for date, price in zip(future_dates, predictions) %}
+                        <tr>
+                            <td>{{ date.date() }}</td>
+                            <td>${{ "%.2f"|format(price) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>📊 Prediction Graph</h2>
+            <div class="chart glass">{{ prediction_plot | safe }}</div>
+
+            <!-- Sentiment Analysis Section -->
+            <div class="sentiment glass blink-slow" style="background-color: {{ sentiment.color }}; padding: 20px; border-radius: 15px; margin: 20px 0; text-align: center;">
+                <h2>🎯 Recommendation: {{ sentiment.recommendation }}</h2>
+                <p>{{ sentiment.comment }}</p>
+            </div>
+
+            <!-- Sentiment Pie Chart -->
+            <h2>📊 Sentiment Scores</h2>
+            <div id="sentiment-pie-chart" class="glass"></div>
+
+            <br>
+            <a href="/" class="btn glass">🏠 Back to Home</a>
+        </div>
+    </div>
+
+    <script>
+        // Sentiment Pie Chart Data
+        const sentimentData = {
+            labels: ['Positive', 'Negative', 'Neutral'],
+            values: [0, 0, 0], // Default values
+            colors: ['#00ff00', '#ff0000', '#ffa500']
+        };
+
+        // Update sentiment values based on recommendation
+        const recommendation = "{{ sentiment.recommendation }}";
+        if (recommendation.includes("Buy")) {
+            sentimentData.values = [70, 15, 15]; // High positive
+        } else if (recommendation.includes("Sell")) {
+            sentimentData.values = [15, 70, 15]; // High negative
+        } else if (recommendation.includes("Hold")) {
+            sentimentData.values = [15, 15, 70]; // High neutral
+        }
+
+        // Create Pie Chart
+        const pieChartData = [{
+            values: sentimentData.values,
+            labels: sentimentData.labels,
+            type: 'pie',
+            marker: {
+                colors: sentimentData.colors
+            },
+            textinfo: 'label+percent',
+            hoverinfo: 'label+percent',
+            hole: 0.4
+        }];
+
+        const pieChartLayout = {
+            title: 'Sentiment Scores',
+            showlegend: true,
+            height: 400,
+            width: 400,
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: {
+                color: '#fff'
+            }
+        };
+
+        Plotly.newPlot('sentiment-pie-chart', pieChartData, pieChartLayout);
+    </script>
+</body>
+</html>
