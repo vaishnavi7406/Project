@@ -648,7 +648,7 @@ def main():
         st.markdown("""
             <div style="margin-top: 20px;">
                 <h3>Don't know about trading? Learn here!</h3>
-                <a href="https://traderiserr.streamlit.app/" target="_blank">
+                <a href="https://traderiserrai.streamlit.app/" target="_blank">
                     <button style="background: linear-gradient(45deg, #6a11cb, #2575fc); color: white; border: none; border-radius: 10px; padding: 10px 20px; font-size: 16px; transition: transform 0.3s ease, box-shadow 0.3s ease;">
                         Go to Trading Simulator
                     </button>
